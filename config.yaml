@@ -1,0 +1,53 @@
+# PICA Microscopy Viewer Configuration
+
+# S3 Configuration
+s3:
+  endpoint_url: "http://localhost:9000"  # MinIO for local dev; null for AWS
+  bucket_name: "pb-ome-tiffs"
+  region: "us-west-2"
+  access_key_id: "minioadmin"  # Override with env var S3_ACCESS_KEY_ID
+  secret_access_key: "minioadmin"  # Override with env var S3_SECRET_ACCESS_KEY
+  use_ssl: false  # true for production AWS
+
+# Cache Configuration
+cache:
+  enabled: true
+  root_path: "~/.pica_cache"
+  max_size_gb: 50
+  eviction_policy: "lru"
+
+# Tile Configuration
+tiles:
+  tile_size: 256
+  default_format: "png"
+  compression_level: 6
+
+# Feature Flags
+features:
+  use_zarr: true
+  enable_auth: false
+  prefetch_tiles: true
+
+# Server Configuration
+server:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  reload: true  # Dev mode only
+
+# Image Processing
+processing:
+  max_workers: 8
+  chunk_size: 1024
+  default_percentile_range: [1, 99]
+
+# Authentication (future)
+auth:
+  # TODO: Add Cognito/JWT configuration
+  enabled: false
+  provider: "cognito"  # cognito, jwt, session
+
+# Logging
+logging:
+  level: "INFO"
+  format: "json"

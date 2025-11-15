@@ -1,0 +1,38 @@
+# Core Web Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+# Async and HTTP
+httpx==0.26.0
+aiofiles==23.2.1
+
+# S3 and Cloud Storage
+s3fs==2024.2.0
+fsspec==2024.2.0
+boto3==1.34.34
+
+# Image Processing
+numpy==1.26.3
+scikit-image==0.22.0
+Pillow==10.2.0
+imagecodecs==2024.1.1
+tifffile==2024.1.30
+zarr==2.16.1
+dask[array]==2024.1.1
+aicsimageio==4.14.0
+ome-zarr==0.8.3
+
+# Caching
+diskcache==5.6.3
+
+# Configuration
+PyYAML==6.0.1
+python-dotenv==1.0.1
+
+# Data
+pandas==2.2.0
+
+# Utilities
+loguru==0.7.2

@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  # MinIO - S3-compatible object storage for local development
+  minio:
+    image: minio/minio:latest
+    container_name: pica-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"  # MinIO console
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+      - ./minio-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - pica-network
+
+  # MinIO bucket initialization
+  minio-init:
+    image: minio/mc:latest
+    container_name: pica-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/pb-ome-tiffs --ignore-existing;
+      /usr/bin/mc anonymous set download myminio/pb-ome-tiffs;
+      echo 'MinIO bucket created and configured';
+      exit 0;
+      "
+    networks:
+      - pica-network
+
+  # Backend FastAPI service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: pica-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # S3 Configuration
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_BUCKET_NAME: pb-ome-tiffs
+      S3_ACCESS_KEY_ID: minioadmin
+      S3_SECRET_ACCESS_KEY: minioadmin
+      S3_REGION: us-east-1
+      S3_USE_SSL: "false"
+
+      # Cache Configuration
+      CACHE_ENABLED: "true"
+      CACHE_ROOT_PATH: /app/cache
+      CACHE_MAX_SIZE_GB: 10
+
+      # Server Configuration
+      HOST: 0.0.0.0
+      PORT: 8000
+      RELOAD: "true"
+      LOG_LEVEL: INFO
+
+      # Features
+      USE_ZARR: "true"
+      ENABLE_AUTH: "false"
+    volumes:
+      - ./backend:/app
+      - backend_cache:/app/cache
+      - ./config.yaml:/app/config.yaml:ro
+    depends_on:
+      - minio
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - pica-network
+
+  # Frontend React service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
+    container_name: pica-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - pica-network
+
+volumes:
+  minio_data:
+    driver: local
+  backend_cache:
+    driver: local
+
+networks:
+  pica-network:
+    driver: bridge

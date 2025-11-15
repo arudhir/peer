@@ -1,0 +1,22 @@
+# Napari and dependencies
+napari[all]==0.4.19
+napari-aicsimageio==0.8.0
+napari-ome-zarr==0.6.0
+
+# Image I/O
+aicsimageio==4.14.0
+ome-zarr==0.8.3
+tifffile==2024.1.30
+zarr==2.16.1
+
+# S3 access
+s3fs==2024.2.0
+fsspec==2024.2.0
+
+# Data processing
+dask[array]==2024.1.1
+numpy==1.26.3
+
+# Configuration
+PyYAML==6.0.1
+python-dotenv==1.0.1
