@@ -45,29 +45,62 @@ docker-compose up -d
 
 # Wait for services to be ready
 docker-compose logs -f backend
+```
 
-# Upload sample data to MinIO
+### 2. Load Example Data
+
+Choose one of the following options:
+
+#### Option A: Use Public Microscopy Data (Recommended)
+
+Download real OME-TIFF images from public repositories:
+
+```bash
+# Install dependencies
+cd scripts
+pip install -r requirements.txt
+
+# Download and process public OME-TIFF samples
+python download_public_data.py --upload-to-s3
+
+# This will:
+# - Download OME Bio-Formats sample images
+# - Process and organize them into PICA structure
+# - Generate masks automatically
+# - Upload to MinIO
+```
+
+#### Option B: Generate Synthetic Data
+
+Create synthetic test data:
+
+```bash
 pip install boto3 tifffile numpy
 python scripts/upload_sample_data.py
 ```
 
-### 2. Access the Application
+### 3. Access the Application
 
 - **Web UI**: http://localhost:3000
 - **API Docs**: http://localhost:8000/docs
 - **MinIO Console**: http://localhost:9001 (minioadmin/minioadmin)
 
-### 3. Use Napari Desktop Client
+**First time users**: Select experiment `public_demo` and sequence `seq001` to view the downloaded samples.
+
+### 4. Use Napari Desktop Client (Optional)
 
 ```bash
 cd napari_client
 pip install -r requirements.txt
 
-# View by experiment/sequence/well
-python viewer.py --experiment exp001 --sequence seq001 --well A1
+# View public demo data
+python viewer.py --experiment public_demo --sequence seq001 --well A1
 
-# View from direct path
-python viewer.py --path s3://pb-ome-tiffs/exp001/seq001/A1/image.ome.tiff
+# Or view from direct S3 path
+python viewer.py --path s3://pb-ome-tiffs/public_demo/seq001/A1/image.ome.tiff
+
+# Or use local files
+python viewer.py --path /path/to/your/image.ome.tiff
 ```
 
 ## Project Structure
@@ -268,6 +301,61 @@ s3://pb-ome-tiffs/
 | actin | Green | Actin cytoskeleton |
 | mito_mp | Magenta | Mitochondria (membrane potential) |
 | mito_tot | Yellow | Mitochondria (total) |
+
+## Example Data Sources
+
+PICA comes with scripts to download and process real microscopy data from public repositories.
+
+### Public OME-TIFF Datasets
+
+The `download_public_data.py` script fetches data from:
+
+- **OME Bio-Formats Test Images**: Multi-channel OME-TIFF samples
+  - Source: https://downloads.openmicroscopy.org/images/
+  - Includes: Multi-channel images, time-lapse, Z-stacks
+  - License: Public domain / CC BY 4.0
+
+### What the Script Does
+
+1. **Downloads** real OME-TIFF files from public repositories
+2. **Processes** images to extract channels
+3. **Generates** masks using automatic segmentation (Otsu thresholding + morphology)
+4. **Organizes** into PICA directory structure
+5. **Uploads** to MinIO/S3 for immediate use
+
+### Available Wells
+
+After running `download_public_data.py`, you'll have:
+- **Experiment**: `public_demo`
+- **Sequence**: `seq001`
+- **Wells**: `A1`, `A2`, `B1`, `B2` (from different sample images)
+
+Each well contains:
+- 4-channel OME-TIFF image
+- Individual channel TIFFs
+- Binary masks (nuclei, mitochondria)
+- Label mask with detected objects
+
+### Using Your Own Data
+
+To use your own microscopy data:
+
+```bash
+# Organize your TIFFs into the expected structure
+data/
+└── my_experiment/
+    └── my_sequence/
+        └── A1/
+            ├── image.ome.tiff
+            └── masks/
+                └── nuclei_mask.tif
+
+# Upload to MinIO
+python scripts/upload_sample_data.py  # Modify for your structure
+
+# Or point PICA to a different S3 bucket
+export S3_BUCKET_NAME=my-data-bucket
+```
 
 ## Deployment
 
